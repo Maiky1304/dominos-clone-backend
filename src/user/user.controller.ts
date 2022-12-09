@@ -12,9 +12,8 @@ import {
 } from '@nestjs/common';
 import { User as UserModel } from '@prisma/client';
 import { User } from './decorators/user.decorator';
-import { JwtGuard } from '../auth/guard';
+import { JwtGuard, RolesGuard } from '../auth/guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guard/roles.guard';
 import { UserUpdateDto } from './dto';
 import { UserService } from './user.service';
 

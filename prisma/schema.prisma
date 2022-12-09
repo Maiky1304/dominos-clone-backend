@@ -28,8 +28,8 @@ model User {
 
 model Store {
   id        Int      @id @default(autoincrement())
-  name      String
-  address   String
+  name      String   @unique
+  address   String   @unique
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

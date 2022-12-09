@@ -132,7 +132,7 @@ describe('Dominos Clone', () => {
             ...authData,
             ...personalData,
           })
-          .expectStatus(403)
+          .expectStatus(409)
           .toss();
       });
     });
