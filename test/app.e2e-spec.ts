@@ -3,10 +3,18 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import * as pactum from 'pactum';
+import * as argon from 'argon2';
 
 describe('Dominos Clone', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+
+  const adminData = {
+    email: 'admin@e2e.test',
+    password: 'admin',
+    firstName: 'Admin',
+    lastName: 'Admin',
+  };
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -24,7 +32,15 @@ describe('Dominos Clone', () => {
     await app.listen(3336);
 
     prisma = app.get(PrismaService);
+
     await prisma.cleanDb();
+    await prisma.user.create({
+      data: {
+        ...adminData,
+        password: await argon.hash(adminData.password),
+        role: 'ADMIN',
+      },
+    });
 
     pactum.request.setBaseUrl('http://localhost:3336');
   });
@@ -178,6 +194,16 @@ describe('Dominos Clone', () => {
           .stores('token', 'access_token')
           .toss();
       });
+
+      it('should login admin user', async () => {
+        await pactum
+          .spec()
+          .post('/auth/login')
+          .withJson(adminData)
+          .expectStatus(200)
+          .stores('admin_token', 'access_token')
+          .toss();
+      });
     });
   });
 
@@ -194,6 +220,7 @@ describe('Dominos Clone', () => {
           .expectBodyContains(authData.email)
           .expectBodyContains(personalData.firstName)
           .expectBodyContains(personalData.lastName)
+          .stores('user_id', 'id')
           .toss();
       });
 
@@ -205,6 +232,127 @@ describe('Dominos Clone', () => {
             Authorization: 'Bearer obviousinvalidtoken',
           })
           .expectStatus(401)
+          .toss();
+      });
+    });
+
+    describe('find all', () => {
+      it('should not work without "admin" role', async () => {
+        await pactum
+          .spec()
+          .get('/users')
+          .withHeaders({
+            Authorization: 'Bearer $S{token}',
+          })
+          .expectStatus(403)
+          .expectBodyContains(
+            "You don't have permission to access this resource.",
+          )
+          .toss();
+      });
+
+      it('should work with "admin" role', async () => {
+        await pactum
+          .spec()
+          .get('/users')
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(200)
+          .toss();
+      });
+    });
+
+    describe('find by id', () => {
+      it('should not work without "admin" role', async () => {
+        await pactum
+          .spec()
+          .get('/users/{id}')
+          .withPathParams('id', '$S{user_id}')
+          .withHeaders({
+            Authorization: 'Bearer $S{token}',
+          })
+          .expectStatus(403)
+          .expectBodyContains(
+            "You don't have permission to access this resource.",
+          )
+          .toss();
+      });
+
+      it('should work with "admin" role', async () => {
+        await pactum
+          .spec()
+          .get('/users/{id}')
+          .withPathParams('id', '$S{user_id}')
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(200)
+          .toss();
+      });
+    });
+
+    describe('update by id', () => {
+      const update = {
+        firstName: 'updated first name',
+      };
+
+      it('should not work without "admin" role', async () => {
+        await pactum
+          .spec()
+          .patch('/users/{id}')
+          .withPathParams('id', '$S{user_id}')
+          .withHeaders({
+            Authorization: 'Bearer $S{token}',
+          })
+          .withBody(update)
+          .expectStatus(403)
+          .expectBodyContains(
+            "You don't have permission to access this resource.",
+          )
+          .toss();
+      });
+
+      it('should work with "admin" role', async () => {
+        await pactum
+          .spec()
+          .patch('/users/{id}')
+          .withPathParams('id', '$S{user_id}')
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .withBody(update)
+          .expectStatus(200)
+          .expectBodyContains(update.firstName)
+          .toss();
+      });
+    });
+
+    describe('delete by id', () => {
+      it('should not work without "admin" role', async () => {
+        await pactum
+          .spec()
+          .delete('/users/{id}')
+          .withPathParams('id', '$S{user_id}')
+          .withHeaders({
+            Authorization: 'Bearer $S{token}',
+          })
+          .expectStatus(403)
+          .expectBodyContains(
+            "You don't have permission to access this resource.",
+          )
+          .toss();
+      });
+
+      it('should work with "admin" role', async () => {
+        await pactum
+          .spec()
+          .delete('/users/{id}')
+          .withPathParams('id', '$S{user_id}')
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(204)
           .toss();
       });
     });

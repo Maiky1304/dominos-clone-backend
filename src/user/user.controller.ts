@@ -29,24 +29,28 @@ export class UserController {
     return user;
   }
 
+  @HttpCode(HttpStatus.OK)
   @Roles('ADMIN')
   @Get()
   findAll() {
     return this.userService.findAll();
   }
 
+  @HttpCode(HttpStatus.OK)
   @Roles('ADMIN')
   @Get('/:id')
   find(@Param('id', ParseIntPipe) id: number) {
     return this.userService.find(id);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Roles('ADMIN')
   @Patch('/:id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UserUpdateDto) {
     return this.userService.update(id, dto);
   }
 
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Roles('ADMIN')
   @Delete('/:id')
   delete(@Param('id', ParseIntPipe) id: number) {
