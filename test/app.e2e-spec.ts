@@ -132,7 +132,7 @@ describe('Dominos Clone', () => {
             ...authData,
             ...personalData,
           })
-          .expectStatus(403)
+          .expectStatus(409)
           .toss();
       });
     });
@@ -207,7 +207,7 @@ describe('Dominos Clone', () => {
     });
   });
 
-  describe('User', () => {
+  describe('Users', () => {
     describe('identify', () => {
       it('should identify user by token', async () => {
         await pactum
@@ -235,7 +235,6 @@ describe('Dominos Clone', () => {
           .toss();
       });
     });
-
     describe('find all', () => {
       it('should not work without "admin" role', async () => {
         await pactum
@@ -262,7 +261,6 @@ describe('Dominos Clone', () => {
           .toss();
       });
     });
-
     describe('find by id', () => {
       it('should not work without "admin" role', async () => {
         await pactum
@@ -291,7 +289,6 @@ describe('Dominos Clone', () => {
           .toss();
       });
     });
-
     describe('update by id', () => {
       const update = {
         firstName: 'updated first name',
@@ -327,7 +324,6 @@ describe('Dominos Clone', () => {
           .toss();
       });
     });
-
     describe('delete by id', () => {
       it('should not work without "admin" role', async () => {
         await pactum
@@ -349,6 +345,193 @@ describe('Dominos Clone', () => {
           .spec()
           .delete('/users/{id}')
           .withPathParams('id', '$S{user_id}')
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(204)
+          .toss();
+      });
+    });
+  });
+
+  describe('Stores', () => {
+    const storeData = {
+      name: 'e2e test store',
+      address: 'e2e test address',
+    };
+
+    describe('create store', () => {
+      it('should not work without admin role', async () => {
+        await pactum
+          .spec()
+          .post('/stores/create')
+          .withBody({
+            address: storeData.address,
+          })
+          .expectStatus(401)
+          .toss();
+      });
+
+      it('should not work if name is empty/not provided', async () => {
+        await pactum
+          .spec()
+          .post('/stores/create')
+          .withBody({
+            address: storeData.address,
+          })
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(400)
+          .toss();
+      });
+
+      it('should not work if address is empty/not provided', async () => {
+        await pactum
+          .spec()
+          .post('/stores/create')
+          .withBody({
+            name: storeData.name,
+          })
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(400)
+          .toss();
+      });
+
+      it('should work if request is complete', async () => {
+        await pactum
+          .spec()
+          .post('/stores/create')
+          .withBody(storeData)
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(201)
+          .expectBodyContains(storeData.name)
+          .stores('store_id', 'id')
+          .toss();
+      });
+
+      it('should not work if duplicate is trying to be created', async () => {
+        await pactum
+          .spec()
+          .post('/stores/create')
+          .withBody(storeData)
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(409)
+          .expectBodyContains('Store with this name or address already exists')
+          .toss();
+      });
+    });
+    describe('find all stores', () => {
+      it('should not work without admin role', async () => {
+        await pactum.spec().get('/stores').expectStatus(401).toss();
+      });
+
+      it('should work with admin role', async () => {
+        await pactum
+          .spec()
+          .get('/stores')
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(200)
+          .toss();
+      });
+
+      it('should have one item', async () => {
+        await pactum
+          .spec()
+          .get('/stores')
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(200)
+          .expectJsonLength(1)
+          .toss();
+      });
+    });
+    describe('find store by id', () => {
+      it('should not work without admin role', async () => {
+        await pactum
+          .spec()
+          .get('/stores/{id}')
+          .withPathParams('id', '$S{store_id}')
+          .expectStatus(401)
+          .toss();
+      });
+
+      it('should work with admin role', async () => {
+        await pactum
+          .spec()
+          .get('/stores/{id}')
+          .withPathParams('id', '$S{store_id}')
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(200)
+          .toss();
+      });
+
+      it('response body should be present', async () => {
+        await pactum
+          .spec()
+          .get('/stores')
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(200)
+          .expectBodyContains(storeData.name)
+          .toss();
+      });
+    });
+    describe('update store by id', () => {
+      const update = {
+        name: 'e2e test store updated',
+      };
+
+      it('should not work without admin role', async () => {
+        await pactum
+          .spec()
+          .patch('/stores/{id}')
+          .withPathParams('id', '$S{store_id}')
+          .withBody(update)
+          .expectStatus(401)
+          .toss();
+      });
+
+      it('should work with admin role', async () => {
+        await pactum
+          .spec()
+          .get('/stores/{id}')
+          .withPathParams('id', '$S{store_id}')
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .withBody(update)
+          .expectStatus(200)
+          .toss();
+      });
+    });
+    describe('delete store by id', () => {
+      it('should not work without admin role', async () => {
+        await pactum
+          .spec()
+          .delete('/stores/{id}')
+          .withPathParams('id', '$S{store_id}')
+          .expectStatus(401)
+          .toss();
+      });
+
+      it('should work with admin role', async () => {
+        await pactum
+          .spec()
+          .delete('/stores/{id}')
+          .withPathParams('id', '$S{store_id}')
           .withHeaders({
             Authorization: 'Bearer $S{admin_token}',
           })

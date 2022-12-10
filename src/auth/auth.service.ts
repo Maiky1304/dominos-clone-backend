@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { LoginUserDto, RegisterUserDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
@@ -28,7 +32,7 @@ export class AuthService {
       return user;
     } catch (error: any) {
       if (error.code === 'P2002') {
-        throw new ForbiddenException('User with this email already exists');
+        throw new ConflictException('User with this email already exists');
       }
     }
   }
