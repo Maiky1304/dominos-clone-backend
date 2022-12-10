@@ -12,18 +12,21 @@ export class StoreService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateStoreDto) {
-    try {
-      const store = await this.prisma.store.create({
-        data: dto,
-      });
-      return store;
-    } catch (error) {
-      if (error.code === 'P2002') {
-        throw new ConflictException(
-          'Store with this name or address already exists',
-        );
-      }
+    if (
+      (await this.prisma.store.findUnique({
+        where: { name: dto.name },
+      })) ||
+      (await this.prisma.store.findUnique({ where: { address: dto.address } }))
+    ) {
+      throw new ConflictException(
+        `Store with this name or address already exists`,
+      );
     }
+
+    const store = await this.prisma.store.create({
+      data: dto,
+    });
+    return store;
   }
 
   async findAll() {
@@ -46,31 +49,28 @@ export class StoreService {
   }
 
   async updateById(id: number, dto: UpdateStoreDto) {
-    const store = await this.prisma.store.update({
-      where: {
-        id,
-      },
-      data: dto,
-    });
+    const query = { where: { id } };
+    const store = await this.prisma.store.findUnique(query);
 
     if (!store) {
       throw new NotFoundException(`Store with id could ${id} not found`);
     }
 
-    return store;
+    return await this.prisma.store.update({
+      ...query,
+      data: dto,
+    });
   }
 
   async deleteById(id: number) {
-    const store = await this.prisma.store.delete({
-      where: {
-        id,
-      },
-    });
+    const query = { where: { id } };
+    const store = await this.prisma.store.findUnique(query);
 
     if (!store) {
       throw new NotFoundException(`Store with id could ${id} not found`);
     }
 
+    await this.prisma.store.delete(query);
     return { message: 'Store deleted successfully' };
   }
 }

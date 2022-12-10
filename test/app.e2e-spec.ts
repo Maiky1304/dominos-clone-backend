@@ -207,7 +207,7 @@ describe('Dominos Clone', () => {
     });
   });
 
-  describe('User', () => {
+  describe('Users', () => {
     describe('identify', () => {
       it('should identify user by token', async () => {
         await pactum
@@ -235,7 +235,6 @@ describe('Dominos Clone', () => {
           .toss();
       });
     });
-
     describe('find all', () => {
       it('should not work without "admin" role', async () => {
         await pactum
@@ -262,7 +261,6 @@ describe('Dominos Clone', () => {
           .toss();
       });
     });
-
     describe('find by id', () => {
       it('should not work without "admin" role', async () => {
         await pactum
@@ -291,7 +289,6 @@ describe('Dominos Clone', () => {
           .toss();
       });
     });
-
     describe('update by id', () => {
       const update = {
         firstName: 'updated first name',
@@ -327,7 +324,6 @@ describe('Dominos Clone', () => {
           .toss();
       });
     });
-
     describe('delete by id', () => {
       it('should not work without "admin" role', async () => {
         await pactum
@@ -353,6 +349,82 @@ describe('Dominos Clone', () => {
             Authorization: 'Bearer $S{admin_token}',
           })
           .expectStatus(204)
+          .toss();
+      });
+    });
+  });
+
+  describe('Stores', () => {
+    const storeData = {
+      name: 'e2e test store',
+      address: 'e2e test address',
+    };
+
+    describe('create store', () => {
+      it('should not work without admin role', async () => {
+        await pactum
+          .spec()
+          .post('/stores/create')
+          .withBody({
+            address: storeData.address,
+          })
+          .expectStatus(401)
+          .toss();
+      });
+
+      it('should not work if name is empty/not provided', async () => {
+        await pactum
+          .spec()
+          .post('/stores/create')
+          .withBody({
+            address: storeData.address,
+          })
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(400)
+          .toss();
+      });
+
+      it('should not work if address is empty/not provided', async () => {
+        await pactum
+          .spec()
+          .post('/stores/create')
+          .withBody({
+            name: storeData.name,
+          })
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .expectStatus(400)
+          .toss();
+      });
+
+      it('should work if request is complete', async () => {
+        await pactum
+          .spec()
+          .post('/stores/create')
+          .withBody(storeData)
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .inspect()
+          .expectStatus(201)
+          .expectBodyContains(storeData.name)
+          .toss();
+      });
+
+      it('should not work if duplicate is trying to be created', async () => {
+        await pactum
+          .spec()
+          .post('/stores/create')
+          .withBody(storeData)
+          .withHeaders({
+            Authorization: 'Bearer $S{admin_token}',
+          })
+          .inspect()
+          .expectStatus(409)
+          .expectBodyContains('Store with this name or address already exists')
           .toss();
       });
     });
