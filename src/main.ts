@@ -9,6 +9,7 @@ async function bootstrap() {
       whitelist: true,
     }),
   );
+  app.setGlobalPrefix('/api/v1');
 
   await app.listen(3333);
 }
